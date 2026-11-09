@@ -1,0 +1,246 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Video Player</title>
+<style>
+  html, body { margin: 0; background: #000; }
+  canvas { display: block; width: 360px; height: 640px; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+/*
+ * Generischer Player für "Was wäre, wenn …?"-Videos.
+ * Zeichnet: Szene (aus videos/<name>/scene.js), Titel, Datenfeld (HUD),
+ * Untertitel und Endkarte. Alles ist eine reine Funktion der Zeit t,
+ * damit jedes Bild deterministisch gerendert werden kann.
+ */
+const W = 1080, H = 1920;
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+const SERIF = '"EB Garamond", Georgia, serif';
+const SANS = '"Inter", Helvetica, Arial, sans-serif';
+
+let SCRIPT, TL, SCENE, STATES, HUDS, FLASHES;
+
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const easeInOut = x => x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const easeOut = x => 1 - Math.pow(1 - x, 3);
+const fmt = new Intl.NumberFormat('de-DE');
+
+window.init = async function (script, timeline, fonts) {
+  for (const f of fonts) {
+    const bytes = Uint8Array.from(atob(f.data), c => c.charCodeAt(0));
+    const face = new FontFace(f.family, bytes.buffer, { style: f.style, weight: f.weight });
+    await face.load();
+    document.fonts.add(face);
+  }
+  SCRIPT = script; TL = timeline;
+  SCENE = window.makeScene(W, H);
+  const defaults = Object.assign({}, SCENE.defaults || {});
+
+  // Zustände: jedes Segment interpoliert von seinem Start- zum Zielzustand.
+  STATES = []; HUDS = []; FLASHES = [];
+  let cur = defaults, hud = null;
+  script.segments.forEach((seg, i) => {
+    const tgt = Object.assign({}, cur, seg.state || {});
+    delete tgt.flash;
+    if (seg.state && seg.state.flash) FLASHES.push(timeline.segments[i].start + 0.25);
+    STATES.push({ from: cur, to: tgt });
+    cur = tgt;
+    if (seg.hud !== undefined) {
+      HUDS.push({ hud: seg.hud, count: !!(seg.hud && seg.hud.from !== undefined), fresh: true });
+      hud = seg.hud;
+    } else {
+      HUDS.push({ hud, count: false, fresh: false });
+    }
+  });
+  return true;
+};
+
+function segIndex(t) {
+  const s = TL.segments;
+  if (t < s[0].start) return 0;
+  for (let i = s.length - 1; i >= 0; i--) if (t >= s[i].start) return i;
+  return 0;
+}
+
+function stateAt(t) {
+  const i = segIndex(t), seg = TL.segments[i], st = STATES[i];
+  const p = easeInOut(clamp((t - seg.start) / Math.max(0.5, seg.end - seg.start)));
+  const out = {};
+  for (const k in st.to) out[k] = st.from[k] + (st.to[k] - st.from[k]) * p;
+  out.flash = 0;
+  for (const ft of FLASHES) if (t >= ft) out.flash = Math.max(out.flash, Math.exp(-(t - ft) * 2.2));
+  return out;
+}
+
+// ---------- Text-Helfer ----------
+function wrap(text, maxW) {
+  const words = text.split(' '), lines = [];
+  let line = '';
+  for (const w of words) {
+    const test = line ? line + ' ' + w : w;
+    if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = w; }
+    else line = test;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+function shadowText(text, x, y, blur = 18, alpha = 0.55) {
+  ctx.shadowColor = `rgba(0,0,0,${alpha})`;
+  ctx.shadowBlur = blur;
+  ctx.fillText(text, x, y);
+  ctx.shadowBlur = 0;
+}
+
+function hudValue(h, t, seg) {
+  if (h.text) return h.text;
+  if (h.value !== undefined) return fmt.format(h.value) + (h.suffix || '');
+  return null;
+}
+
+function drawHud(t) {
+  const i = segIndex(t), seg = TL.segments[i], entry = HUDS[i];
+  if (t < seg.start || !entry.hud) {
+    // Übergang von einem vorherigen HUD ausblenden
+    return;
+  }
+  let alpha = 1;
+  if (entry.fresh) alpha = clamp((t - seg.start) / 0.45);
+  const h = entry.hud;
+  let val;
+  if (h.from !== undefined) {
+    if (entry.count) {
+      const p = easeOut(clamp((t - seg.start) / Math.max(0.6, seg.voiceEnd - seg.start + 0.2)));
+      val = h.from + (h.to - h.from) * p;
+    } else val = h.to;
+    val = fmt.format(Math.round(val)) + (h.suffix || '');
+  } else val = hudValue(h, t, seg);
+
+  // vorheriges HUD kurz ausblenden, bevor das neue erscheint
+  if (entry.fresh && i > 0 && HUDS[i - 1].hud && t - seg.start < 0.3) {
+    const prev = HUDS[i - 1].hud;
+    const pv = prev.from !== undefined ? fmt.format(prev.to) + (prev.suffix || '') : hudValue(prev);
+    paintHud(prev.label, pv, prev.sub, 1 - (t - seg.start) / 0.3);
+    alpha = clamp((t - seg.start - 0.3) / 0.35);
+  }
+  paintHud(h.label, val, h.sub, alpha);
+}
+
+function paintHud(label, value, sub, alpha) {
+  if (alpha <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  const x = 72, y = 860;
+  // weicher dunkler Hintergrund für Lesbarkeit
+  const bg = ctx.createRadialGradient(x + 180, y + 50, 0, x + 180, y + 50, 420);
+  bg.addColorStop(0, 'rgba(0,0,0,0.38)'); bg.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = bg; ctx.fillRect(x - 250, y - 380, 860, 860);
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  ctx.font = `600 25px ${SANS}`;
+  ctx.letterSpacing = '5px';
+  shadowText(label.toUpperCase(), x, y, 14, 0.6);
+  ctx.font = `400 104px ${SERIF}`;
+  ctx.letterSpacing = '0px';
+  shadowText(String(value), x - 4, y + 98, 24, 0.5);
+  if (sub) {
+    ctx.font = `500 21px ${SANS}`;
+    ctx.letterSpacing = '5px';
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    shadowText(sub.toUpperCase(), x, y + 140, 12, 0.6);
+  }
+  ctx.restore();
+}
+
+function drawSubtitle(t) {
+  const i = segIndex(t), seg = TL.segments[i], sd = SCRIPT.segments[i];
+  if (sd.title || t < seg.start) return;
+  const text = sd.sub || sd.voice;
+  const a = clamp((t - seg.start) / 0.25) * clamp((seg.end - t) / 0.2);
+  if (a <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = a;
+  ctx.font = `italic 500 54px ${SERIF}`;
+  ctx.letterSpacing = '0px';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#fff';
+  const lines = wrap(text, 900);
+  const y0 = 1215 - (lines.length - 1) * 33;
+  lines.forEach((l, k) => shadowText(l, W / 2, y0 + k * 66, 22, 0.75));
+  ctx.restore();
+}
+
+function drawTitle(t) {
+  const seg = TL.segments[0];
+  if (!SCRIPT.segments[0].title) return;
+  const a = clamp((t - 0.2) / 0.8) * clamp((seg.end + 0.6 - t) / 0.8);
+  if (a <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = a;
+  ctx.font = `400 84px ${SERIF}`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#fff';
+  const lines = wrap(SCRIPT.title, 860);
+  const y0 = 520 - (lines.length - 1) * 48;
+  lines.forEach((l, k) => shadowText(l, W / 2, y0 + k * 96, 40, 0.6));
+  ctx.restore();
+}
+
+function drawEndCard(t) {
+  const e = TL.endCard;
+  if (!e || t < e.start) return;
+  const a = clamp((t - e.start) / 0.9);
+  ctx.fillStyle = `rgba(14,14,16,${a})`;
+  ctx.fillRect(0, 0, W, H);
+  const ta = clamp((t - e.start - 0.6) / 0.8) * clamp((e.end - t) / 0.6);
+  ctx.save();
+  ctx.globalAlpha = ta;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#f2f2f2';
+  ctx.font = `400 64px ${SERIF}`;
+  const tl = wrap(SCRIPT.endCard.title, 900);
+  tl.forEach((l, k) => ctx.fillText(l, W / 2, 800 + k * 76));
+  const fa = clamp((t - e.voiceStart) / 0.8);
+  ctx.globalAlpha = ta * fa;
+  ctx.font = `500 23px ${SANS}`;
+  ctx.letterSpacing = '4px';
+  ctx.fillStyle = '#8d8d93';
+  const fl = wrap(SCRIPT.endCard.fact.toUpperCase(), 860);
+  const fy = 800 + tl.length * 76 + 30;
+  fl.forEach((l, k) => ctx.fillText(l, W / 2, fy + k * 38));
+  ctx.restore();
+}
+
+window.renderFrame = function (t) {
+  const s = stateAt(t);
+  ctx.save();
+  // langsamer Push-in der Kamera
+  const z = 1 + 0.05 * (t / TL.total);
+  ctx.translate(W / 2, H * 0.6); ctx.scale(z, z); ctx.translate(-W / 2, -H * 0.6);
+  SCENE.draw(ctx, t, s);
+  ctx.restore();
+  if (s.flash > 0.001) {
+    ctx.fillStyle = `rgba(255,250,240,${0.9 * s.flash})`;
+    ctx.fillRect(0, 0, W, H);
+  }
+  drawTitle(t);
+  drawHud(t);
+  drawSubtitle(t);
+  drawEndCard(t);
+};
+
+window.grab = function (t, quality) {
+  window.renderFrame(t);
+  return canvas.toDataURL('image/jpeg', quality || 0.93).slice(23);
+};
+</script>
+</body>
+</html>

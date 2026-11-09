@@ -1,0 +1,109 @@
+{
+  "title": "Was wäre, wenn Andromeda zu uns kommt?",
+  "voice": "de-DE-FlorianMultilingualNeural",
+  "rate": "-4%",
+  "leadIn": 0.8,
+  "gap": 0.45,
+  "endCard": {
+    "title": "Was wäre, wenn Andromeda zu uns kommt?",
+    "fact": "Neue Messungen von Hubble und Gaia (2025): Die Chance, dass Milchstraße und Andromeda in den nächsten 10 Milliarden Jahren verschmelzen, liegt nur bei etwa 50 %.",
+    "voice": "Neue Messungen zeigen: Die Chance auf den großen Zusammenstoß liegt nur bei etwa fünfzig Prozent.",
+    "duration": 2.5
+  },
+  "segments": [
+    {
+      "voice": "Was wäre, wenn die Andromeda-Galaxie zu uns kommt?",
+      "title": true,
+      "pause": 0.9
+    },
+    {
+      "voice": "Das ist Andromeda. Unsere große Nachbargalaxie.",
+      "hud": { "label": "Entfernung", "value": 2537000, "sub": "Lichtjahre" },
+      "state": { "marker": 1 }
+    },
+    {
+      "voice": "Ihr Licht war zweieinhalb Millionen Jahre zu uns unterwegs.",
+      "sub": "Ihr Licht war 2,5 Millionen Jahre zu uns unterwegs.",
+      "state": { "marker": 1 }
+    },
+    {
+      "voice": "Und sie kommt näher. Mit vierhunderttausend Kilometern pro Stunde.",
+      "sub": "Und sie kommt näher. Mit 400.000 km/h.",
+      "hud": { "label": "Annäherung", "from": 0, "to": 400000, "sub": "Kilometer pro Stunde" },
+      "state": { "marker": 0 }
+    },
+    {
+      "voice": "Spulen wir vor.",
+      "hud": { "label": "Zeit", "from": 0, "to": 1000000000, "sub": "Jahre in der Zukunft" },
+      "state": { "people": 0, "fire": 0 },
+      "pause": 0.6
+    },
+    {
+      "voice": "Nach einer Milliarde Jahren strahlt die Sonne zehn Prozent heller. Die Seen beginnen zu verdampfen.",
+      "sub": "Die Sonne strahlt 10 % heller. Die Seen beginnen zu verdampfen.",
+      "hud": { "label": "Zeit", "from": 1000000000, "to": 2000000000, "sub": "Jahre in der Zukunft" },
+      "state": { "lake": 0.35, "life": 0.35, "heat": 0.45, "gal": 0.12 }
+    },
+    {
+      "voice": "Nach zwei Milliarden Jahren ist die Erde eine Wüste. Und Andromeda wird größer.",
+      "sub": "Die Erde ist eine Wüste. Und Andromeda wird größer.",
+      "hud": { "label": "Zeit", "from": 2000000000, "to": 3000000000, "sub": "Jahre in der Zukunft" },
+      "state": { "lake": 0, "life": 0, "heat": 0.75, "gal": 0.32, "galB": 0.75 }
+    },
+    {
+      "voice": "Nach knapp vier Milliarden Jahren füllt sie den halben Himmel.",
+      "sub": "Nach knapp 4 Milliarden Jahren füllt sie den halben Himmel.",
+      "hud": { "label": "Zeit", "from": 3000000000, "to": 3750000000, "sub": "Jahre in der Zukunft" },
+      "state": { "gal": 1, "galB": 1 }
+    },
+    {
+      "voice": "Dann beginnt das Feuerwerk.",
+      "hud": { "label": "Zeit", "from": 3750000000, "to": 3850000000, "sub": "Jahre in der Zukunft" },
+      "state": { "nebula": 0.55, "gal": 1.08 },
+      "pause": 0.3
+    },
+    {
+      "voice": "Riesige Gaswolken prallen aufeinander. Milliarden neue Sterne werden geboren.",
+      "hud": { "label": "Neue Sterne", "from": 0, "to": 4000000000, "sub": "und es werden mehr" },
+      "state": { "nebula": 1, "gal": 1.15 }
+    },
+    {
+      "voice": "Aber zwei Sterne stoßen fast nie zusammen. Der Platz zwischen ihnen ist einfach zu groß.",
+      "sub": "Aber Sterne stoßen fast nie zusammen. Der Platz zwischen ihnen ist zu groß.",
+      "hud": { "label": "Sternkollisionen", "value": 0, "sub": "praktisch keine" }
+    },
+    {
+      "voice": "Unsere Sonne wird einfach weggeschleudert. Der ganze Himmel dreht sich.",
+      "hud": { "label": "Zeit", "from": 4000000000, "to": 5000000000, "sub": "Jahre in der Zukunft" },
+      "state": { "drift": 1, "nebula": 0.6 }
+    },
+    {
+      "voice": "Nach fünf Milliarden Jahren leuchten zwei helle Kerne über uns.",
+      "sub": "Nach 5 Milliarden Jahren leuchten zwei helle Kerne über uns.",
+      "hud": { "label": "Zeit", "from": 5000000000, "to": 5100000000, "sub": "Jahre in der Zukunft" },
+      "state": { "cores": 1, "gal": 0.6, "galB": 0.35, "nebula": 0.3 }
+    },
+    {
+      "voice": "Tief in ihnen kreisen zwei Schwarze Löcher umeinander. Immer schneller. Bis sie verschmelzen.",
+      "sub": "Tief in ihnen kreisen zwei Schwarze Löcher umeinander. Immer schneller …",
+      "hud": { "label": "Schwarze Löcher", "value": 2, "sub": "im Zentrum" },
+      "state": { "spin": 1 }
+    },
+    {
+      "voice": "Aus zwei Galaxien wird eine. Astronomen nennen sie: Milchomeda.",
+      "hud": { "label": "Neue Galaxie", "text": "Milchomeda", "sub": "in 7 Milliarden Jahren" },
+      "state": { "merge": 1, "cores": 0, "gal": 0, "galB": 0, "nebula": 0, "flash": 1 }
+    },
+    {
+      "voice": "Und unsere Sonne? Sie bläht sich zu einem Roten Riesen auf.",
+      "hud": { "label": "Durchmesser der Sonne", "from": 1, "to": 200, "suffix": "×", "sub": "größer als heute" },
+      "state": { "giant": 1, "heat": 1 }
+    },
+    {
+      "voice": "Doch vielleicht passiert all das niemals.",
+      "hud": null,
+      "state": { "fade": 1 },
+      "pause": 0.4
+    }
+  ]
+}
