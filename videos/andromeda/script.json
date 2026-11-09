@@ -1,7 +1,14 @@
 {
   "title": "Was wäre, wenn Andromeda zu uns kommt?",
-  "voice": "de-DE-FlorianMultilingualNeural",
-  "rate": "-4%",
+  "tts": {
+    "provider": "elevenlabs",
+    "voice_id": "nPczCjzI2devNBz1zQrb",
+    "model": "eleven_multilingual_v2",
+    "stability": 0.45,
+    "similarity": 0.8,
+    "style": 0.15,
+    "speed": 0.97
+  },
   "leadIn": 0.8,
   "gap": 0.45,
   "endCard": {

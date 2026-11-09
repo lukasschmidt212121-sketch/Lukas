@@ -1,24 +1,29 @@
 #!/usr/bin/env python3
 """Erzeugt die KI-Stimme für jedes Segment und berechnet daraus die Zeitachse.
 
-Aufruf: python3 engine/voice.py videos/<name>
+Aufruf:
+  python3 engine/voice.py videos/<name>     Stimme + Zeitachse + Tonmischung
+  python3 engine/voice.py --voices          verfügbare ElevenLabs-Stimmen auflisten
+
+Anbieter (in script.json unter "tts"):
+  {"provider": "elevenlabs", "voice_id": "...", "model": "eleven_multilingual_v2", ...}
+  {"provider": "edge", "voice": "de-DE-FlorianMultilingualNeural", "rate": "-4%"}
+
+Den ElevenLabs-Schlüssel liest das Skript aus ELEVENLABS_API_KEY. In der
+Cloud-Umgebung setzt der Netzwerk-Proxy ihn automatisch ein.
 
 Ergebnis in videos/<name>/build/:
-  voice_XX.mp3     – ein Clip pro Segment (wird gecacht)
+  voice_XX_*.mp3   – ein Clip pro Segment (wird gecacht)
   timeline.json    – Start/Ende jedes Segments in Sekunden (für den Renderer)
   audio.wav        – Stimme + Hintergrund-Drone, fertig gemischt
 """
-import asyncio, hashlib, json, os, ssl, subprocess, sys
-
-import edge_tts
-import edge_tts.communicate as _comm
-
-# Im Cloud-Container läuft HTTPS über einen Proxy mit eigener CA.
-_CA = "/root/.ccr/ca-bundle.crt"
-if os.path.exists(_CA):
-    _comm._SSL_CTX = ssl.create_default_context(cafile=_CA)
+import asyncio, hashlib, json, os, ssl, subprocess, sys, urllib.request, urllib.error
 
 FPS = 30
+_CA = "/root/.ccr/ca-bundle.crt"           # HTTPS-Proxy-CA im Cloud-Container
+SSL_CTX = ssl.create_default_context(cafile=_CA) if os.path.exists(_CA) else ssl.create_default_context()
+EL_API = "https://api.elevenlabs.io/v1"
+EL_KEY = os.environ.get("ELEVENLABS_API_KEY", "proxy-injected")
 
 
 def duration(path):
@@ -28,15 +33,58 @@ def duration(path):
     return float(out)
 
 
-async def synth(text, voice, rate, out):
-    await edge_tts.Communicate(text, voice, rate=rate).save(out)
+def el_request(path, body=None):
+    req = urllib.request.Request(
+        EL_API + path, data=json.dumps(body).encode() if body else None,
+        headers={"xi-api-key": EL_KEY, "Content-Type": "application/json"},
+        method="POST" if body else "GET")
+    try:
+        with urllib.request.urlopen(req, context=SSL_CTX, timeout=120) as r:
+            return r.read()
+    except urllib.error.HTTPError as e:
+        sys.exit(f"ElevenLabs-Fehler {e.code}: {e.read().decode()[:300]}")
+
+
+def synth_elevenlabs(tts, text, prev_text, next_text, out):
+    body = {
+        "text": text,
+        "model_id": tts.get("model", "eleven_multilingual_v2"),
+        "language_code": tts.get("language", "de"),
+        "previous_text": prev_text or None,
+        "next_text": next_text or None,
+        "voice_settings": {
+            "stability": tts.get("stability", 0.45),
+            "similarity_boost": tts.get("similarity", 0.8),
+            "style": tts.get("style", 0.15),
+            "use_speaker_boost": True,
+            "speed": tts.get("speed", 1.0),
+        },
+    }
+    if body["model_id"] == "eleven_multilingual_v2":
+        body.pop("language_code")           # v2 erkennt die Sprache selbst
+    audio = el_request(f"/text-to-speech/{tts['voice_id']}?output_format=mp3_44100_192", body)
+    open(out, "wb").write(audio)
+
+
+def synth_edge(tts, text, out):
+    import edge_tts, edge_tts.communicate as comm
+    comm._SSL_CTX = SSL_CTX
+    asyncio.run(edge_tts.Communicate(text, tts["voice"], rate=tts.get("rate", "+0%")).save(out))
+
+
+def list_voices():
+    data = json.loads(el_request("/voices"))
+    for v in data["voices"]:
+        lab = v.get("labels") or {}
+        print(f"{v['voice_id']}  {v['name']:<28} {lab.get('gender', ''):<7} "
+              f"{lab.get('accent', ''):<12} {lab.get('description', '') or lab.get('use_case', '')}")
 
 
 def main(vdir):
     script = json.load(open(os.path.join(vdir, "script.json"), encoding="utf-8"))
     build = os.path.join(vdir, "build")
     os.makedirs(build, exist_ok=True)
-    voice, rate = script["voice"], script.get("rate", "+0%")
+    tts = script["tts"]
     gap = script.get("gap", 0.4)
 
     lines = [s["voice"] for s in script["segments"]]
@@ -46,11 +94,16 @@ def main(vdir):
 
     clips = []
     for i, text in enumerate(lines):
-        key = hashlib.sha1(f"{voice}|{rate}|{text}".encode()).hexdigest()[:10]
+        prev_t = lines[i - 1] if i > 0 else ""
+        next_t = lines[i + 1] if i + 1 < len(lines) else ""
+        key = hashlib.sha1(json.dumps([tts, text, prev_t, next_t], sort_keys=True).encode()).hexdigest()[:10]
         path = os.path.join(build, f"voice_{i:02d}_{key}.mp3")
         if not os.path.exists(path):
             print(f"  Stimme {i + 1}/{len(lines)}: {text}")
-            asyncio.run(synth(text, voice, rate, path))
+            if tts["provider"] == "elevenlabs":
+                synth_elevenlabs(tts, text, prev_t, next_t, path)
+            else:
+                synth_edge(tts, text, path)
         clips.append((path, duration(path)))
 
     t = script.get("leadIn", 0.6)
@@ -107,4 +160,7 @@ def main(vdir):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    if sys.argv[1] == "--voices":
+        list_voices()
+    else:
+        main(sys.argv[1])

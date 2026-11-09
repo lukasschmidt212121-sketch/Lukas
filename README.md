@@ -39,8 +39,10 @@ Jedes Segment ist ein gesprochener Satz:
 - `state` – Zielwerte der Szene, die während des Satzes erreicht werden
 - `pause` – Pause danach in Sekunden
 
-Stimme und Tempo: `voice` (z. B. `de-DE-FlorianMultilingualNeural`,
-`de-DE-SeraphinaMultilingualNeural`, `de-DE-KatjaNeural`) und `rate` (z. B. `-4%`).
+Stimme: unter `tts` – ElevenLabs (`provider: "elevenlabs"`, `voice_id`, `speed`,
+`stability`, `style`) oder kostenlos Edge (`provider: "edge"`, `voice`, `rate`).
+Stimmen auflisten: `python3 engine/voice.py --voices`. Edge-Beispiele: `de-DE-FlorianMultilingualNeural`,
+`de-DE-SeraphinaMultilingualNeural`, `de-DE-KatjaNeural`.
 
 > Hinweis: Die Edge-Stimmen sind kostenlos, aber kein offizielles API-Produkt.
 > Für kommerzielle Nutzung lieber ElevenLabs oder OpenAI TTS einbinden.
