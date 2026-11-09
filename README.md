@@ -10,6 +10,7 @@ laufenden Zahlen, kursive Untertitel, Endkarte mit Fakt.
 |---|---|
 | Was wäre, wenn Andromeda zu uns kommt? | [`videos/andromeda/andromeda.mp4`](videos/andromeda/andromeda.mp4) |
 | Was wäre, wenn der 3. Weltkrieg ausbricht? | [`videos/weltkrieg/weltkrieg.mp4`](videos/weltkrieg/weltkrieg.mp4) |
+| Was wäre, wenn die Erde aufhört, sich zu drehen? | [`videos/erde-stopp/erde-stopp.mp4`](videos/erde-stopp/erde-stopp.mp4) |
 
 ## So entsteht ein Video
 
@@ -44,7 +45,10 @@ Jedes Segment ist ein gesprochener Satz:
 
 Weitere Optionen auf oberster Ebene: `camera` (`{"perScene": true, "push": 0.014}` = Push-in pro Einstellung),
 `sfx` (synthetische Soundeffekte: `siren`, `beep`, `buzz`, `alarm`, `rumble`, `boom`, `wind`, `whoosh` –
-jeweils mit `seg`, `offset`, `dur`, `vol`), `musicVolume`. HUD-Zähler können mit `"fmt": "mmss"` als Countdown laufen.
+jeweils mit `seg`, `offset`, `dur`, `vol`), `musicVolume`. HUD-Zähler können mit `"fmt": "mmss"` als Countdown laufen; `delay`/`dur` steuern, wann und wie schnell gezählt wird.
+Optionale Daten (z. B. Landflächen der Erde) legt ein Video in `data.js` ab – sie werden vor `scene.js` geladen.
+
+Kartendaten: Natural Earth (gemeinfrei), über das npm-Paket `world-atlas`.
 Gemeinsame Zeichenhelfer (Rauch, Skylines, Partikel) liegen in `engine/lib.js`.
 
 Stimme: unter `tts` – ElevenLabs (`provider: "elevenlabs"`, `voice_id`, `speed`,

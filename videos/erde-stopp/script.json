@@ -1,0 +1,109 @@
+{
+  "title": "Was wäre, wenn die Erde aufhört, sich zu drehen?",
+  "tts": {
+    "provider": "elevenlabs",
+    "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+    "model": "eleven_multilingual_v2",
+    "stability": 0.4,
+    "similarity": 0.8,
+    "style": 0.25,
+    "speed": 1.08
+  },
+  "camera": { "perScene": true, "push": 0.012 },
+  "musicVolume": 0.45,
+  "leadIn": 0.5,
+  "gap": 0.25,
+  "sfx": [
+    { "type": "boom", "seg": 2, "offset": 1.0, "dur": 3.5, "vol": 0.9 },
+    { "type": "wind", "seg": 3, "offset": 0, "dur": 8.5, "vol": 1.6 },
+    { "type": "rumble", "seg": 3, "offset": 0, "dur": 8.5, "vol": 1.0 },
+    { "type": "rumble", "seg": 5, "offset": 0, "dur": 4.5, "vol": 1.4 },
+    { "type": "wind", "seg": 8, "offset": 0, "dur": 4.5, "vol": 0.5 },
+    { "type": "whoosh", "seg": 9, "offset": 0, "dur": 1.0, "vol": 0.3 },
+    { "type": "whoosh", "seg": 12, "offset": 0, "dur": 1.0, "vol": 0.3 }
+  ],
+  "endCard": {
+    "title": "Was wäre, wenn die Erde aufhört, sich zu drehen?",
+    "fact": "Die Erde wird wirklich langsamer: Jeder Tag wird pro Jahrhundert etwa 1,8 Millisekunden länger. Vor 600 Millionen Jahren dauerte ein Tag nur rund 22 Stunden.",
+    "voice": "Vor sechshundert Millionen Jahren hatte ein Tag nur zweiundzwanzig Stunden.",
+    "voiceDelay": 0.6,
+    "duration": 1.0
+  },
+  "segments": [
+    {
+      "voice": "Was wäre, wenn die Erde plötzlich aufhört, sich zu drehen?",
+      "scene": "globe",
+      "title": true,
+      "pause": 0.3
+    },
+    {
+      "voice": "Am Äquator drehen wir uns mit tausendsechshundertsiebzig Kilometern pro Stunde. Wir spüren es nur nicht.",
+      "sub": "Am Äquator drehen wir uns mit 1.670 km/h. Wir spüren es nur nicht.",
+      "hud": { "label": "Geschwindigkeit am Äquator", "value": 1670, "suffix": " km/h", "sub": "durch die Erddrehung" },
+      "state": { "spin": 1, "marker": 1 }
+    },
+    {
+      "voice": "Doch jetzt bleibt sie stehen. Ganz plötzlich.",
+      "hud": { "label": "Geschwindigkeit am Äquator", "from": 1670, "to": 0, "suffix": " km/h", "sub": "Stillstand", "delay": 0.3, "dur": 0.8 },
+      "state": { "spin": 0, "marker": 0, "shake": 0.25 }
+    },
+    {
+      "voice": "Die Luft aber fliegt weiter. Mit über tausend Kilometern pro Stunde fegt sie über Deutschland.",
+      "sub": "Die Luft aber fliegt weiter. Mit über 1.000 km/h fegt sie über Deutschland.",
+      "scene": "street",
+      "transition": "flash",
+      "hud": { "label": "Wind in Deutschland", "from": 0, "to": 1073, "suffix": " km/h", "sub": "stärker als jeder Tornado" },
+      "state": { "shake": 0.45 }
+    },
+    {
+      "voice": "Bäume, Autos, Dächer: Alles wird mitgerissen.",
+      "state": { "shake": 0.55 }
+    },
+    {
+      "voice": "Auch die Ozeane schwappen weiter. Gewaltige Wellen rollen über die Küsten.",
+      "scene": "ocean",
+      "hud": null,
+      "state": { "shake": 0.3 }
+    },
+    {
+      "voice": "Dann wird es still. Und die Sonne bleibt am Himmel stehen.",
+      "scene": "sun",
+      "transition": "black",
+      "hud": { "label": "Länge eines Tages", "from": 24, "to": 8766, "suffix": " Std.", "sub": "ein ganzes Jahr" },
+      "state": { "shake": 0 }
+    },
+    {
+      "voice": "Denn ein Tag dauert jetzt ein ganzes Jahr."
+    },
+    {
+      "voice": "Ein halbes Jahr glühende Hitze. Dann ein halbes Jahr eisige Nacht.",
+      "scene": "split",
+      "hud": { "label": "Tag und Nacht", "text": "je 6 Monate", "sub": "Hitze – dann Eis" }
+    },
+    {
+      "voice": "Ohne Fliehkraft wandert das Wasser zu den Polen.",
+      "scene": "migrate",
+      "transition": "black",
+      "hud": null,
+      "state": { "water": 0.5 }
+    },
+    {
+      "voice": "Am Äquator taucht ein riesiger Superkontinent auf. Und Deutschland liegt unter Wasser.",
+      "hud": { "label": "Neuer Superkontinent", "text": "Äquator", "sub": "Ozeane an beiden Polen" },
+      "state": { "water": 1, "marker": 1 }
+    },
+    {
+      "voice": "Auch unser Magnetfeld könnte schwächer werden und uns nicht mehr vor dem Sonnenwind schützen.",
+      "scene": "magnet",
+      "hud": { "label": "Magnetfeld", "from": 100, "to": 15, "suffix": " %", "sub": "Schutzschild schwindet" },
+      "state": { "field": 0.15, "marker": 0 }
+    },
+    {
+      "voice": "Die gute Nachricht: So plötzlich kann die Erde nicht stoppen. Aber sie wird tatsächlich langsamer.",
+      "scene": "globe",
+      "transition": "black",
+      "hud": null,
+      "state": { "spin": 1, "water": 0, "field": 1 }
+    }
+  ]
+}

@@ -137,7 +137,7 @@ function drawHud(t) {
   let val;
   if (h.from !== undefined) {
     if (entry.count) {
-      const raw = clamp((t - seg.start) / Math.max(0.6, seg.voiceEnd - seg.start + 0.2));
+      const raw = clamp((t - seg.start - (h.delay || 0)) / (h.dur || Math.max(0.6, seg.voiceEnd - seg.start + 0.2)));
       const p = h.ease === 'linear' ? raw : easeOut(raw);
       val = h.from + (h.to - h.from) * p;
     } else val = h.to;
