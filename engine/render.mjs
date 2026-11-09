@@ -35,6 +35,7 @@ const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 400, height: 700 } });
 page.on('pageerror', e => { console.error('Seitenfehler:', e); process.exit(1); });
 await page.goto(pathToFileURL(path.join(here, 'player.html')).href);
+await page.addScriptTag({ path: path.join(here, 'lib.js') });
 await page.addScriptTag({ path: path.join(vdir, 'scene.js') });
 await page.evaluate(([s, t, fo]) => window.init(s, t, fo), [script, timeline, fonts]);
 

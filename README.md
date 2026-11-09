@@ -9,6 +9,7 @@ laufenden Zahlen, kursive Untertitel, Endkarte mit Fakt.
 | Video | Datei |
 |---|---|
 | Was wäre, wenn Andromeda zu uns kommt? | [`videos/andromeda/andromeda.mp4`](videos/andromeda/andromeda.mp4) |
+| Was wäre, wenn der 3. Weltkrieg ausbricht? | [`videos/weltkrieg/weltkrieg.mp4`](videos/weltkrieg/weltkrieg.mp4) |
 
 ## So entsteht ein Video
 
@@ -38,6 +39,13 @@ Jedes Segment ist ein gesprochener Satz:
   `{label, text}` für Wörter; weglassen = vorheriges behalten; `null` = ausblenden
 - `state` – Zielwerte der Szene, die während des Satzes erreicht werden
 - `pause` – Pause danach in Sekunden
+- `scene` – Einstellung wechseln (Name aus `scene.js` → `scenes`), `transition`: `cut` | `flash` | `black`
+- `subY` – Untertitel-Position für dieses Segment
+
+Weitere Optionen auf oberster Ebene: `camera` (`{"perScene": true, "push": 0.014}` = Push-in pro Einstellung),
+`sfx` (synthetische Soundeffekte: `siren`, `beep`, `buzz`, `alarm`, `rumble`, `boom`, `wind`, `whoosh` –
+jeweils mit `seg`, `offset`, `dur`, `vol`), `musicVolume`. HUD-Zähler können mit `"fmt": "mmss"` als Countdown laufen.
+Gemeinsame Zeichenhelfer (Rauch, Skylines, Partikel) liegen in `engine/lib.js`.
 
 Stimme: unter `tts` – ElevenLabs (`provider: "elevenlabs"`, `voice_id`, `speed`,
 `stability`, `style`) oder kostenlos Edge (`provider: "edge"`, `voice`, `rate`).

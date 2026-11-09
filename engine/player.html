@@ -24,7 +24,9 @@ const ctx = canvas.getContext('2d');
 const SERIF = '"EB Garamond", Georgia, serif';
 const SANS = '"Inter", Helvetica, Arial, sans-serif';
 
-let SCRIPT, TL, SCENE, STATES, HUDS, FLASHES;
+let SCRIPT, TL, SCENE, STATES, HUDS, FLASHES, RUNS;
+const buf = document.createElement('canvas'); buf.width = W; buf.height = H;
+const bctx = buf.getContext('2d');
 
 const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
 const easeInOut = x => x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
@@ -40,6 +42,17 @@ window.init = async function (script, timeline, fonts) {
   }
   SCRIPT = script; TL = timeline;
   SCENE = window.makeScene(W, H);
+  if (!SCENE.scenes) SCENE.scenes = { main: SCENE.draw };
+  // Szenenfolge: jedes Segment gehört zu einer Szene; ein "Lauf" ist eine
+  // zusammenhängende Folge von Segmenten derselben Szene (eigene Szenenzeit lt).
+  RUNS = [];
+  let sceneName = Object.keys(SCENE.scenes)[0], runStart = 0;
+  script.segments.forEach((seg, i) => {
+    const st = i === 0 ? 0 : timeline.segments[i].start;
+    if (seg.scene && seg.scene !== sceneName) { sceneName = seg.scene; runStart = st; }
+    else if (seg.scene && i > 0 && seg.newShot) runStart = st;
+    RUNS.push({ scene: sceneName, start: runStart, transition: seg.transition || 'cut' });
+  });
   const defaults = Object.assign({}, SCENE.defaults || {});
 
   // Zustände: jedes Segment interpoliert von seinem Start- zum Zielzustand.
@@ -98,6 +111,14 @@ function shadowText(text, x, y, blur = 18, alpha = 0.55) {
   ctx.shadowBlur = 0;
 }
 
+function numFmt(h, v) {
+  if (h.fmt === 'mmss') {
+    const sec = Math.max(0, Math.round(v));
+    return String(Math.floor(sec / 60)).padStart(2, '0') + ':' + String(sec % 60).padStart(2, '0');
+  }
+  return (h.prefix || '') + fmt.format(Math.round(v)) + (h.suffix || '');
+}
+
 function hudValue(h, t, seg) {
   if (h.text) return h.text;
   if (h.value !== undefined) return fmt.format(h.value) + (h.suffix || '');
@@ -116,16 +137,17 @@ function drawHud(t) {
   let val;
   if (h.from !== undefined) {
     if (entry.count) {
-      const p = easeOut(clamp((t - seg.start) / Math.max(0.6, seg.voiceEnd - seg.start + 0.2)));
+      const raw = clamp((t - seg.start) / Math.max(0.6, seg.voiceEnd - seg.start + 0.2));
+      const p = h.ease === 'linear' ? raw : easeOut(raw);
       val = h.from + (h.to - h.from) * p;
     } else val = h.to;
-    val = fmt.format(Math.round(val)) + (h.suffix || '');
+    val = numFmt(h, val);
   } else val = hudValue(h, t, seg);
 
   // vorheriges HUD kurz ausblenden, bevor das neue erscheint
   if (entry.fresh && i > 0 && HUDS[i - 1].hud && t - seg.start < 0.3) {
     const prev = HUDS[i - 1].hud;
-    const pv = prev.from !== undefined ? fmt.format(prev.to) + (prev.suffix || '') : hudValue(prev);
+    const pv = prev.from !== undefined ? numFmt(prev, prev.to) : hudValue(prev);
     paintHud(prev.label, pv, prev.sub, 1 - (t - seg.start) / 0.3);
     alpha = clamp((t - seg.start - 0.3) / 0.35);
   }
@@ -173,7 +195,7 @@ function drawSubtitle(t) {
   ctx.textAlign = 'center';
   ctx.fillStyle = '#fff';
   const lines = wrap(text, 900);
-  const y0 = 1215 - (lines.length - 1) * 33;
+  const y0 = (sd.subY || 1215) - (lines.length - 1) * 33;
   lines.forEach((l, k) => shadowText(l, W / 2, y0 + k * 66, 22, 0.75));
   ctx.restore();
 }
@@ -219,14 +241,40 @@ function drawEndCard(t) {
   ctx.restore();
 }
 
+function drawShot(c, t, run, s) {
+  const lt = t - run.start;
+  c.save();
+  // Kamera: langsamer Push-in (pro Video oder pro Szene) + Wackeln
+  const cam = SCRIPT.camera || {};
+  const z = cam.perScene ? 1 + (cam.push ?? 0.012) * lt : 1 + 0.05 * (t / TL.total);
+  if (s.shake > 0.001) {
+    const a = s.shake * 22;
+    c.translate(a * (Math.sin(t * 61) * 0.6 + Math.sin(t * 37 + 1) * 0.4),
+                a * (Math.sin(t * 53 + 2) * 0.6 + Math.sin(t * 29) * 0.4));
+  }
+  c.translate(W / 2, H * 0.6); c.scale(z, z); c.translate(-W / 2, -H * 0.6);
+  SCENE.scenes[run.scene](c, t, s, lt);
+  c.restore();
+}
+
 window.renderFrame = function (t) {
   const s = stateAt(t);
-  ctx.save();
-  // langsamer Push-in der Kamera
-  const z = 1 + 0.05 * (t / TL.total);
-  ctx.translate(W / 2, H * 0.6); ctx.scale(z, z); ctx.translate(-W / 2, -H * 0.6);
-  SCENE.draw(ctx, t, s);
-  ctx.restore();
+  const i = segIndex(t), run = RUNS[i];
+  drawShot(ctx, t, run, s);
+  // Übergang am Anfang eines neuen Szenen-Laufs
+  const k = t - run.start;
+  if (i > 0 && run.start > 0 && k < 0.6) {
+    const prev = RUNS[RUNS.findLastIndex((r, j) => j < i && r.start < run.start)];
+    if (run.transition === 'cut' && prev && k < 0.16) {
+      bctx.clearRect(0, 0, W, H);
+      drawShot(bctx, t, prev, s);
+      ctx.globalAlpha = 1 - k / 0.16; ctx.drawImage(buf, 0, 0); ctx.globalAlpha = 1;
+    } else if (run.transition === 'flash') {
+      ctx.fillStyle = `rgba(255,252,245,${clamp(1 - k / 0.5)})`; ctx.fillRect(0, 0, W, H);
+    } else if (run.transition === 'black') {
+      ctx.fillStyle = `rgba(0,0,0,${clamp(1 - k / 0.55)})`; ctx.fillRect(0, 0, W, H);
+    }
+  }
   if (s.flash > 0.001) {
     ctx.fillStyle = `rgba(255,250,240,${0.9 * s.flash})`;
     ctx.fillRect(0, 0, W, H);

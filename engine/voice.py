@@ -72,6 +72,32 @@ def synth_edge(tts, text, out):
     asyncio.run(edge_tts.Communicate(text, tts["voice"], rate=tts.get("rate", "+0%")).save(out))
 
 
+# Synthetische Soundeffekte als ffmpeg-Quellen (Dauer d in Sekunden)
+SFX = {
+    # auf- und abschwellende Sirene
+    "siren": lambda d: (f"aevalsrc='0.35*sin(2*PI*(620*t-(260/(2*PI*0.28))*cos(2*PI*0.28*t)))'"
+                        f":s=48000:d={d},lowpass=f=2500,aecho=0.8:0.7:180:0.35"),
+    # Radar-Piepen einmal pro Sekunde
+    "beep": lambda d: f"aevalsrc='0.25*sin(2*PI*1150*t)*lt(mod(t\\,1.1)\\,0.08)':s=48000:d={d}",
+    # Handy-Vibration
+    "buzz": lambda d: (f"aevalsrc='0.7*sin(2*PI*175*t)*(0.6+0.4*sin(2*PI*87*t))*lt(mod(t\\,0.9)\\,0.5)'"
+                       f":s=48000:d={d},lowpass=f=600"),
+    # Warnton im Kontrollraum
+    "alarm": lambda d: (f"aevalsrc='0.18*sgn(sin(2*PI*if(lt(mod(t\\,1)\\,0.5)\\,440\\,554)*t))'"
+                        f":s=48000:d={d},lowpass=f=2200"),
+    # tiefes Grollen (Raketenstart)
+    "rumble": lambda d: f"anoisesrc=c=brown:a=0.9:d={d}:r=48000,lowpass=f=160,volume=3",
+    # Explosion: harter Einsatz, langes Ausklingen
+    "boom": lambda d: (f"anoisesrc=c=brown:a=1:d={d}:r=48000,lowpass=f=120,volume=6,"
+                       f"afade=t=out:st=0.15:d={d - 0.15}:curve=exp"),
+    # Wind
+    "wind": lambda d: (f"anoisesrc=c=pink:a=0.5:d={d}:r=48000,bandpass=f=450:width_type=h:w=500,"
+                       f"volume='0.6+0.4*sin(2*PI*0.23*t)':eval=frame"),
+    # Rauschen für Übergänge
+    "whoosh": lambda d: f"anoisesrc=c=pink:a=0.6:d={d}:r=48000,highpass=f=500,lowpass=f=4000",
+}
+
+
 def list_voices():
     data = json.loads(el_request("/voices"))
     for v in data["voices"]:
@@ -119,8 +145,8 @@ def main(vdir):
     if end:
         es = t + 0.3
         ed = clips[-1][1] if end.get("voice") else 0
-        timeline["endCard"] = {"start": round(es, 3), "voiceStart": round(es + 1.0, 3),
-                               "end": round(es + 1.0 + ed + end.get("duration", 3), 3)}
+        timeline["endCard"] = {"start": round(es, 3), "voiceStart": round(es + end.get("voiceDelay", 1.0), 3),
+                               "end": round(es + end.get("voiceDelay", 1.0) + ed + end.get("duration", 3), 3)}
         total = timeline["endCard"]["end"]
     else:
         total = t + 0.5
@@ -138,6 +164,16 @@ def main(vdir):
         filters.append(f"[{i}:a]aresample=48000,aformat=channel_layouts=stereo,"
                        f"adelay={ms}|{ms},apad[v{i}]")
     n = len(clips)
+    # Soundeffekte (synthetisch), zeitlich an Segmente gebunden
+    sfx_labels = []
+    for k, fx in enumerate(script.get("sfx", [])):
+        st = segs[fx["seg"]]["start"] + fx.get("offset", 0)
+        d, vol = fx.get("dur", 2.0), fx.get("vol", 1.0)
+        src = SFX[fx["type"]](d)
+        ms = int(st * 1000)
+        filters.append(f"{src},afade=t=in:d={min(0.4, d / 4)},afade=t=out:st={d * 0.7:.2f}:d={d * 0.3:.2f},"
+                       f"volume={vol},aformat=channel_layouts=stereo,adelay={ms}|{ms},apad[fx{k}]")
+        sfx_labels.append(f"[fx{k}]")
     # Drone: tiefe, langsam schwebende Akkorde + gefiltertes Rauschen
     drone = ("aevalsrc='0.10*sin(2*PI*55*t)*(0.6+0.4*sin(2*PI*0.05*t))"
              "+0.07*sin(2*PI*82.4*t)*(0.6+0.4*sin(2*PI*0.071*t+1))"
@@ -148,10 +184,10 @@ def main(vdir):
              "+0.05*sin(2*PI*110.4*t)*(0.5+0.5*sin(2*PI*0.047*t+1))"
              "+0.035*sin(2*PI*165.3*t)*(0.5+0.5*sin(2*PI*0.08*t+4))'"
              f":s=48000:d={total}")
-    filters.append(f"{drone},lowpass=f=900,volume=0.55,"
+    filters.append(f"{drone},lowpass=f=900,volume={script.get('musicVolume', 0.55)},"
                    f"afade=t=in:d=2,afade=t=out:st={total - 3:.2f}:d=3[m]")
-    mix_in = "".join(f"[v{i}]" for i in range(n)) + "[m]"
-    filters.append(f"{mix_in}amix=inputs={n + 1}:normalize=0:duration=longest,"
+    mix_in = "".join(f"[v{i}]" for i in range(n)) + "".join(sfx_labels) + "[m]"
+    filters.append(f"{mix_in}amix=inputs={n + 1 + len(sfx_labels)}:normalize=0:duration=longest,"
                    f"atrim=0:{total},loudnorm=I=-14:TP=-1.5:LRA=11,aresample=48000[out]")
     subprocess.check_call(["ffmpeg", "-y", "-v", "error", *inputs,
                            "-filter_complex", ";".join(filters), "-map", "[out]",

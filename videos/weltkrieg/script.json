@@ -1,0 +1,131 @@
+{
+  "title": "Was wäre, wenn der 3. Weltkrieg ausbricht?",
+  "tts": {
+    "provider": "elevenlabs",
+    "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+    "model": "eleven_multilingual_v2",
+    "stability": 0.4,
+    "similarity": 0.8,
+    "style": 0.25,
+    "speed": 1.06
+  },
+  "camera": { "perScene": true, "push": 0.014 },
+  "musicVolume": 0.45,
+  "sfx": [
+    { "type": "buzz", "seg": 1, "offset": 0.3, "dur": 3.8, "vol": 0.8 },
+    { "type": "whoosh", "seg": 2, "offset": 0, "dur": 0.9, "vol": 0.35 },
+    { "type": "beep", "seg": 3, "offset": 0, "dur": 8.2, "vol": 0.6 },
+    { "type": "alarm", "seg": 4, "offset": 0, "dur": 4.8, "vol": 0.45 },
+    { "type": "rumble", "seg": 6, "offset": 0.2, "dur": 3.3, "vol": 1.3 },
+    { "type": "siren", "seg": 7, "offset": 0, "dur": 5.9, "vol": 0.4 },
+    { "type": "boom", "seg": 8, "offset": 0, "dur": 6, "vol": 1.2 },
+    { "type": "rumble", "seg": 9, "offset": 1.2, "dur": 3.5, "vol": 1.4 },
+    { "type": "whoosh", "seg": 10, "offset": 0, "dur": 1.0, "vol": 0.3 },
+    { "type": "wind", "seg": 12, "offset": 0, "dur": 9.2, "vol": 0.7 }
+  ],
+  "leadIn": 0.5,
+  "gap": 0.25,
+  "endCard": {
+    "title": "Was wäre, wenn der 3. Weltkrieg ausbricht?",
+    "fact": "1986 gab es weltweit rund 70.000 Atomwaffen. Heute sind es etwa 12.000 – über 80 % weniger. Quellen: SIPRI 2025 · Xia et al., Nature Food 2022",
+    "voice": "Übrigens: Seit 1986 wurden über achtzig Prozent aller Atomwaffen abgebaut.",
+    "voiceDelay": 0.6,
+    "duration": 0.9
+  },
+  "segments": [
+    {
+      "voice": "Was wäre, wenn der dritte Weltkrieg ausbricht?",
+      "scene": "city",
+      "title": true,
+      "pause": 0.4
+    },
+    {
+      "voice": "Ein ganz normaler Abend. Dann vibrieren Millionen Handys gleichzeitig.",
+      "scene": "phone",
+      "subY": 1720,
+      "state": { "shake": 0.12 }
+    },
+    {
+      "voice": "Zuerst trifft es, was man nicht sieht: Stromnetze, Internet, Satelliten.",
+      "scene": "blackout",
+      "hud": { "label": "Stromausfall", "from": 0, "to": 100, "suffix": " %", "sub": "der Stadt ist dunkel" },
+      "state": { "shake": 0, "dark": 1 }
+    },
+    {
+      "voice": "Weltweit gibt es rund zwölftausend Atomwaffen.",
+      "sub": "Weltweit gibt es rund 12.000 Atomwaffen.",
+      "scene": "radar",
+      "hud": { "label": "Atomwaffen weltweit", "from": 0, "to": 12241, "sub": "Stand 2025" },
+      "state": { "blips": 0.4 }
+    },
+    {
+      "voice": "Eine Rakete braucht etwa dreißig Minuten bis auf die andere Seite der Erde.",
+      "sub": "Eine Rakete braucht etwa 30 Minuten bis auf die andere Seite der Erde.",
+      "hud": { "label": "Flugzeit", "from": 1800, "to": 1500, "fmt": "mmss", "ease": "linear", "sub": "bis zum Einschlag" },
+      "state": { "blips": 1, "alarm": 1 }
+    },
+    {
+      "voice": "Für die Entscheidung zurückzuschlagen bleiben nur Minuten.",
+      "scene": "silo",
+      "hud": { "label": "Zeit für die Entscheidung", "text": "≈ 6 Min.", "sub": "laut Experten" },
+      "state": { "alarm": 0, "launch": 0 }
+    },
+    {
+      "voice": "Und dann starten sie. Hunderte gleichzeitig.",
+      "scene": "launch",
+      "state": { "launch": 1, "shake": 0.35 }
+    },
+    {
+      "voice": "Ein einziger Sprengkopf ist bis zu fünfzig Mal stärker als die Bombe von Hiroshima.",
+      "sub": "Ein einziger Sprengkopf ist bis zu 50-mal stärker als die Bombe von Hiroshima.",
+      "scene": "incoming",
+      "transition": "black",
+      "hud": { "label": "Sprengkraft", "from": 1, "to": 50, "suffix": "×", "sub": "Hiroshima" },
+      "state": { "shake": 0, "launch": 0 }
+    },
+    {
+      "voice": "Der Feuerball ist heißer als die Oberfläche der Sonne.",
+      "scene": "blast",
+      "transition": "flash",
+      "hud": { "label": "Temperatur", "text": "> 5.500 °C", "sub": "heißer als die Sonnenoberfläche" },
+      "state": { "blast": 0.45 }
+    },
+    {
+      "voice": "Die Druckwelle zerstört alles im Umkreis von Kilometern.",
+      "hud": { "label": "Zerstörungsradius", "from": 0, "to": 7, "suffix": " km", "sub": "bei 800 Kilotonnen" },
+      "state": { "blast": 1, "shake": 0.5 }
+    },
+    {
+      "voice": "Brennende Städte schleudern Ruß bis in die Stratosphäre.",
+      "scene": "space",
+      "transition": "black",
+      "hud": { "label": "Ruß in der Atmosphäre", "from": 0, "to": 150000000, "sub": "Tonnen" },
+      "state": { "shake": 0, "soot": 0.55 }
+    },
+    {
+      "voice": "Er verdunkelt die Sonne. Jahrelang.",
+      "state": { "soot": 1 },
+      "pause": 0.4
+    },
+    {
+      "voice": "Mitten im Sommer fällt Schnee. Die Ernten erfrieren.",
+      "scene": "winter",
+      "hud": { "label": "Temperatur", "from": 0, "to": -8, "suffix": " °C", "sub": "im weltweiten Schnitt" },
+      "state": { "snow": 0.6 }
+    },
+    {
+      "voice": "Studien schätzen: Über fünf Milliarden Menschen könnten verhungern.",
+      "sub": "Studien schätzen: Über 5 Milliarden Menschen könnten verhungern.",
+      "hud": { "label": "Menschen in Gefahr", "from": 0, "to": 5000000000, "sub": "durch Hungersnot" },
+      "state": { "snow": 1 },
+      "pause": 0.6
+    },
+    {
+      "voice": "Aber nichts davon ist passiert. Und es liegt an uns, dass es so bleibt.",
+      "scene": "city",
+      "transition": "black",
+      "hud": null,
+      "state": { "snow": 0, "dark": 0, "blips": 0, "soot": 0, "blast": 0 }
+    }
+  ]
+}
