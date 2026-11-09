@@ -62,7 +62,7 @@ def synth_elevenlabs(tts, text, prev_text, next_text, out):
     }
     if body["model_id"] == "eleven_multilingual_v2":
         body.pop("language_code")           # v2 erkennt die Sprache selbst
-    audio = el_request(f"/text-to-speech/{tts['voice_id']}?output_format=mp3_44100_192", body)
+    audio = el_request(f"/text-to-speech/{tts['voice_id']}?output_format=mp3_44100_128", body)
     open(out, "wb").write(audio)
 
 

@@ -2,7 +2,7 @@
   "title": "Was wäre, wenn Andromeda zu uns kommt?",
   "tts": {
     "provider": "elevenlabs",
-    "voice_id": "nPczCjzI2devNBz1zQrb",
+    "voice_id": "JBFqnCBsd6RMkjVDRZzb",
     "model": "eleven_multilingual_v2",
     "stability": 0.45,
     "similarity": 0.8,
